@@ -46,34 +46,66 @@ sched = Scheduler()
 class AsyncQueue:
     def __init__(self):
         self.items = deque()
+        self.waiting = deque()  # All getters waiting for data
 
+# We put something on the queue and if something is waiting then pop it off and pas to Scheduler
     def put(self, item):
         self.items.append(item)
+        if self.waiting:
+            func = self.waiting.popleft()
+            # Do we call it right away?
+            # func() -----> not a good idea as might get deep calls, recursion, etc.
+            sched.call_soon(func)
 
-    def get(self):
+    def get(self, callback):
         # Wait until an item is available. Then return it.
-        pass
+        if self.items:
+            callback(self.items.popleft())
+        else:
+            self.waiting.append(lambda: self.get(callback))
 
 
 def producer(q, count):
-    for n in range(count):
-        print('Producing', n)
-        q.put(n)
-        time.sleep(1)
+    # Can't use this for loop as it will block until complete - anti async
+    # for n in range(count):
+    #     print('Producing', n)
+    #     q.put(n)
+    #     time.sleep(1)
+    def _run(n):
+        if n < count:
+            print('Producing', n)
+            q.put(n)
+            sched.call_later(1, lambda: _run(n+1))
+        else:
+            print("Producer done")
+            q.put(None)  # 'sentinel' to shut down
 
-    print("Producer done")
-    q.put(None)  # 'sentinel' to shut down
+    _run(0)
 
 
 def consumer(q):
-    while True:
-        item = q.get()  # PROBLEM HERE: .get() waiting
+    def _consume(item):
         if item is None:
-            break
-        print('Consuming', item)
-    print('Consumer done')
+            pass
+        else:
+            print('Consuming', item)
+            sched.call_soon(lambda: consumer(q))
+    q.get(callback=_consume())
 
 
-q = queue.Queue()  # Thread safe queue
-threading.Thread(target=producer, args=(q, 10)).start()
-threading.Thread(target=consumer, args=(q,)).start()
+q = AsyncQueue()
+sched.call_soon(lambda: producer(q, 10))
+sched.call_soon(lambda: consumer(q,))
+sched.run()
+
+#     while True:
+#         item = q.get()  # PROBLEM HERE: .get() waiting
+#         if item is None:
+#             break
+#         print('Consuming', item)
+#     print('Consumer done')
+#
+#
+# q = queue.Queue()  # Thread safe queue
+# threading.Thread(target=producer, args=(q, 10)).start()
+# threading.Thread(target=consumer, args=(q,)).start()
