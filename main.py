@@ -4,7 +4,7 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import time
+
 
 # def countdown(n):
 #     while n > 0:
@@ -42,7 +42,10 @@ import time
 # Have to figure out how to interrupt the loops
 # Scheduling of callback funcs
 
+
+import time
 from collections import deque
+import heapq
 
 
 class Scheduler:
@@ -55,14 +58,19 @@ class Scheduler:
 
     def call_later(self, delay, func):
         deadline = time.time() + delay  # Expiration time
-        self.sleeping.append((deadline, func))
-        self.sleeping.sort()   # Sort by closest deadline
+        # priority queue
+        heapq.heappush(self.sleeping, (deadline, func))
+
+        # self.sleeping.append((deadline, func))
+        # self.sleeping.sort()   # Sort by closest deadline
 
     def run(self):
         while self.ready or self.sleeping:
             if not self.ready:
                 # Find the nearest deadline
-                deadline, func = self.sleeping.pop(0)
+                # Use of heapq is more efficient and includes the sorting bit
+                deadline, func = heapq.heappop(self.sleeping)
+                # deadline, func = self.sleeping.pop(0)
                 delta = deadline - time.time()
                 if delta > 0:
                     time.sleep(delta)
