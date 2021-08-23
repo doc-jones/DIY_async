@@ -60,9 +60,9 @@ class AsyncQueue:
     def get(self, callback):
         # Wait until an item is available. Then return it.
         if self.items:
-            callback(self.items.popleft())
+            callback(self.items.popleft())  # Trigger a callback if data is available
         else:
-            self.waiting.append(lambda: self.get(callback))
+            self.waiting.append(lambda: self.get(callback))  # no data arrange to execute later
 
 
 def producer(q, count):
