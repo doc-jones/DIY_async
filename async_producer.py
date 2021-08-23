@@ -42,14 +42,40 @@ sched = Scheduler()
 
 # -------------------------------------------------------
 
+class Result:
+    def __init__(self, value=None, exc=None):
+        self.value = value
+        self.exc = exc
+
+    def result(self):
+        if self.exc:
+            raise self.exc
+        else:
+            return self.value
+
+
+class QueueClosed(Exception):
+    pass
+
+
 # Implement a queuing object
 class AsyncQueue:
     def __init__(self):
         self.items = deque()
         self.waiting = deque()  # All getters waiting for data
+        self._closed = False  # Can queue be used anymore?
 
-# We put something on the queue and if something is waiting then pop it off and pas to Scheduler
+    def close(self):
+        self._closed = True
+        if self.waiting and not self.items:
+            for func in self.waiting:
+                sched.call_soon(func)
+
+    # We put something on the queue and if something is waiting then pop it off and pas to Scheduler
     def put(self, item):
+        if self._closed:
+            raise QueueClosed()
+
         self.items.append(item)
         if self.waiting:
             func = self.waiting.popleft()
@@ -60,9 +86,14 @@ class AsyncQueue:
     def get(self, callback):
         # Wait until an item is available. Then return it.
         if self.items:
-            callback(self.items.popleft())  # Trigger a callback if data is available
+            callback(
+                Result(value=self.items.popleft()))  # Trigger a callback if data is available, still runs if "closed"
         else:
-            self.waiting.append(lambda: self.get(callback))  # no data arrange to execute later
+            # No items available (must wait)
+            if self._closed:
+                callback(Result(exc=QueueClosed()))  # Error result
+            else:
+                self.waiting.append(lambda: self.get(callback))  # no data arrange to execute later
 
 
 def producer(q, count):
@@ -75,27 +106,34 @@ def producer(q, count):
         if n < count:
             print('Producing', n)
             q.put(n)
-            sched.call_later(1, lambda: _run(n+1))
+            sched.call_later(1, lambda: _run(n + 1))
         else:
             print("Producer done")
-            q.put(None)  # 'sentinel' to shut down
+            q.close()  # No more items will be produced
+            # q.put(None)  # 'sentinel' to shut down
 
     _run(0)
 
 
 def consumer(q):
-    def _consume(item):
-        if item is None:
-            pass
-        else:
-            print('Consuming', item)
+    # def _consume(item):          # This is the callback
+    def _consume(result):
+        try:
+            item = result.result()
+            # if item is None:              # <<<<<<< Queue closed check (Error)
+            #     print('Consumer done')
+            # else:
+            print('Consuming', item)  # <<<<<<<< Queue item (Result)
             sched.call_soon(lambda: consumer(q))
-    q.get(callback=_consume())
+        except QueueClosed:
+            print('Consumer done')
+
+    q.get(callback=_consume)
 
 
 q = AsyncQueue()
 sched.call_soon(lambda: producer(q, 10))
-sched.call_soon(lambda: consumer(q,))
+sched.call_soon(lambda: consumer(q, ))
 sched.run()
 
 #     while True:
