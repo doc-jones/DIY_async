@@ -52,14 +52,16 @@ class Scheduler:
     def __init__(self):
         self.ready = deque()  # Functions ready to execute
         self.sleeping = []  # Sleeping functions
+        self.sequence = 0   # sequence number avoids case when deadlines are identical
 
     def call_soon(self, func):
         self.ready.append(func)
 
     def call_later(self, delay, func):
+        self.sequence += 1
         deadline = time.time() + delay  # Expiration time
         # priority queue
-        heapq.heappush(self.sleeping, (deadline, func))
+        heapq.heappush(self.sleeping, (deadline, self.sequence, func))
 
         # self.sleeping.append((deadline, func))
         # self.sleeping.sort()   # Sort by closest deadline
@@ -69,7 +71,7 @@ class Scheduler:
             if not self.ready:
                 # Find the nearest deadline
                 # Use of heapq is more efficient and includes the sorting bit
-                deadline, func = heapq.heappop(self.sleeping)
+                deadline, _, func = heapq.heappop(self.sleeping)
                 # deadline, func = self.sleeping.pop(0)
                 delta = deadline - time.time()
                 if delta > 0:
