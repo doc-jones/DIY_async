@@ -1,4 +1,4 @@
-# async_producer.py
+# a_pro_clear.py
 #
 # Implement same functionality as producer.py but without threads
 
@@ -10,16 +10,16 @@ import heapq
 
 class Scheduler:
     def __init__(self):
-        self.ready = deque()  # Functions ready to execute
-        self.sleeping = []  # Sleeping functions
-        self.sequence = 0  # sequence number avoids case when deadlines are identical
+        self.ready = deque()
+        self.sleeping = []
+        self.sequence = 0
 
     def call_soon(self, func):
         self.ready.append(func)
 
     def call_later(self, delay, func):
         self.sequence += 1
-        deadline = time.time() + delay  # Expiration time
+        deadline = time.time() + delay
         # priority queue
         heapq.heappush(self.sleeping, (deadline, self.sequence, func))
 
@@ -27,7 +27,6 @@ class Scheduler:
         while self.ready or self.sleeping:
             if not self.ready:
                 deadline, _, func = heapq.heappop(self.sleeping)
-                # deadline, func = self.sleeping.pop(0)
                 delta = deadline - time.time()
                 if delta > 0:
                     time.sleep(delta)
@@ -39,8 +38,6 @@ class Scheduler:
 
 sched = Scheduler()
 
-
-# -------------------------------------------------------
 
 class Result:
     def __init__(self, value=None, exc=None):
@@ -63,7 +60,7 @@ class AsyncQueue:
     def __init__(self):
         self.items = deque()
         self.waiting = deque()  # All getters waiting for data
-        self._closed = False  # Can queue be used anymore?
+        self._closed = False
 
     def close(self):
         self._closed = True
@@ -79,29 +76,21 @@ class AsyncQueue:
         self.items.append(item)
         if self.waiting:
             func = self.waiting.popleft()
-            # Do we call it right away?
-            # func() -----> not a good idea as might get deep calls, recursion, etc.
             sched.call_soon(func)
 
     def get(self, callback):
-        # Wait until an item is available. Then return it.
         if self.items:
             callback(
-                Result(value=self.items.popleft()))  # Trigger a callback if data is available, still runs if "closed"
+                Result(value=self.items.popleft()))
         else:
             # No items available (must wait)
             if self._closed:
-                callback(Result(exc=QueueClosed()))  # Error result
+                callback(Result(exc=QueueClosed()))      # <<<<<<<<<<<<< Error result
             else:
-                self.waiting.append(lambda: self.get(callback))  # no data arrange to execute later
+                self.waiting.append(lambda: self.get(callback))
 
 
 def producer(q, count):
-    # Can't use this for loop as it will block until complete - anti async
-    # for n in range(count):
-    #     print('Producing', n)
-    #     q.put(n)
-    #     time.sleep(1)
     def _run(n):
         if n < count:
             print('Producing', n)
@@ -109,21 +98,15 @@ def producer(q, count):
             sched.call_later(1, lambda: _run(n + 1))
         else:
             print("Producer done")
-            q.close()  # No more items will be produced
-            # q.put(None)  # 'sentinel' to shut down
-
+            q.close()
     _run(0)
 
 
 def consumer(q):
-    # def _consume(item):          # This is the callback
     def _consume(result):
         try:
             item = result.result()
-            # if item is None:              # <<<<<<< Queue closed check (Error)
-            #     print('Consumer done')
-            # else:
-            print('Consuming', item)  # <<<<<<<< Queue item (Result)
+            print('Consuming', item)               # <<<<<<<< Queue item (Result)
             sched.call_soon(lambda: consumer(q))
         except QueueClosed:
             print('Consumer done')
@@ -135,16 +118,3 @@ q = AsyncQueue()
 sched.call_soon(lambda: producer(q, 10))
 sched.call_soon(lambda: consumer(q, ))
 sched.run()
-
-#     while True:
-#         item = q.get()  # PROBLEM HERE: .get() waiting
-#         if item is None:
-#             break
-#         print('Consuming', item)
-#     print('Consumer done')
-#
-#
-# q = queue.Queue()  # Thread safe queue
-# threading.Thread(target=producer, args=(q, 10)).start()
-# threading.Thread(target=consumer, args=(q,)).start()
-
