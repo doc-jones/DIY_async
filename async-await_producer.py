@@ -60,42 +60,61 @@ sched = Scheduler()  # Background scheduler object
 #  --------------------------------------------------------------
 
 
+class QueueClosed(Exception):
+    pass
+
+
 class AsyncQueue:
     def __init__(self):
         self.items = deque()
         self.waiting = deque()
+        self._closed = False
 
-    def put(self, item):
+    def close(self):
+        self._closed = True
+        if self.waiting and not self.items:
+            sched.ready.append(self.waiting.popleft())  # Reschedule waiting tasks
+
+    async def put(self, item):
+        if self._closed:
+            raise QueueClosed()
+
         self.items.append(item)
         if self.waiting:
             sched.ready.append(self.waiting.popleft())
 
     async def get(self):
-        if not self.items:
+        while not self.items:
+            if self._closed:
+                raise QueueClosed()
             # Wait......
             self.waiting.append(sched.current)  # Go to sleep
             sched.current = None     #
             await switch()           # Switch to another task
+
         return self.items.popleft()
 
 
 async def producer(q, count):
     for n in range(count):
         print('Producing', n)
-        q.put(n)
+        await q.put(n)
         await sched.sleep(1)
 
     print("Producer done")
-    q.put(None)  # 'sentinel' to shut down
+    # await q.put(None)  # 'sentinel' to shut down
+    q.close()
 
 
 async def consumer(q):
-    while True:
-        item = await q.get()
-        if item is None:
-            break
-        print('Consuming', item)
-    print('Consumer done')
+    try:
+        while True:
+            item = await q.get()
+            # if item is None:
+            #     break
+            print('Consuming', item)
+    except QueueClosed:
+        print('Consumer done')
 
 
 q = AsyncQueue()
