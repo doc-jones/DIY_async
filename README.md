@@ -9,5 +9,5 @@ What some people call "callback hell" the [async_producer.py](https://github.com
 Use the yield stmt to create async/await and replace counting functions with producers and consumers.
 See [yield_it.py](https://github.com/doc-jones/DIY_async/blob/main/yield_it.py) and [async-await_producer.py](https://github.com/doc-jones/DIY_async/blob/main/async-await_producer.py)
 
-### Step 2 concurrency combining callbacks and coroutines
+### Step 3 concurrency combining callbacks and coroutines
 Async IO in Python combines the models demonstrated in Step1 and Step 2. This is done using coroutines on top of a callback based Scheduler.
