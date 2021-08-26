@@ -59,6 +59,7 @@ sched = Scheduler()  # Background scheduler object
 
 #  --------------------------------------------------------------
 
+
 class AsyncQueue:
     def __init__(self):
         self.items = deque()
@@ -66,11 +67,15 @@ class AsyncQueue:
 
     def put(self, item):
         self.items.append(item)
+        if self.waiting:
+            sched.ready.append(self.waiting.popleft())
 
-    def get(self):
+    async def get(self):
         if not self.items:
             # Wait......
-            pass
+            self.waiting.append(sched.current)  # Go to sleep
+            sched.current = None     #
+            await switch()           # Switch to another task
         return self.items.popleft()
 
 
@@ -78,7 +83,7 @@ async def producer(q, count):
     for n in range(count):
         print('Producing', n)
         q.put(n)
-        await.sched.sleep(1)
+        await sched.sleep(1)
 
     print("Producer done")
     q.put(None)  # 'sentinel' to shut down
@@ -86,11 +91,17 @@ async def producer(q, count):
 
 async def consumer(q):
     while True:
-        item = q.get()
+        item = await q.get()
         if item is None:
             break
         print('Consuming', item)
     print('Consumer done')
+
+
+q = AsyncQueue()
+sched.new_task(producer(q, 10))
+sched.new_task(consumer(q))
+sched.run()
 
 
 
