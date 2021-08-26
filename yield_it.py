@@ -3,7 +3,7 @@ from collections import deque
 
 class Scheduler:
     def __init__(self):
-        self.ready = deque()
+        self.ready = deque()           # Async queue
         self.current = None            # Currently excuting generator
 
     def new_task(self, gen):
@@ -14,11 +14,13 @@ class Scheduler:
             self.current = self.ready.popleft()
             # Drive as a generator
             try:
-                next(self.current)
+                next(self.current)    # Together with yield this replaces callbacks in driving the code
                 if self.current:
                     self.ready.append(self.current)
             except StopIteration:
                 pass
+
+sched = Scheduler()          # Background scheduler object
 
 def countdown(n):
     while n > 0:
@@ -34,3 +36,7 @@ def countup(stop):
         time.sleep(1)
         yield
         x += 1
+
+sched.new_task(countdown(5))
+sched.new_task(countup(5))
+sched.run()
