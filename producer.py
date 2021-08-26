@@ -1,5 +1,5 @@
 # producer.py
-#
+#  with threads
 # Producer-consumer problem
 import queue
 import threading
