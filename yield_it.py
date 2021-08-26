@@ -74,6 +74,8 @@ async def countup(stop):    # keyword async require to use await
         # await switch()      # Switch tasks
         x += 1
 
+# Comparing the code above to the original funcs the only difference is adding async and await
+
 
 sched.new_task(countdown(5))
 sched.new_task(countup(20))
