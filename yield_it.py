@@ -1,10 +1,11 @@
 import time
 from collections import deque
 
+
 class Scheduler:
     def __init__(self):
         self.ready = deque()           # Async queue
-        self.current = None            # Currently excuting generator
+        self.current = None            # Currently executing generator
 
     def new_task(self, gen):
         self.ready.append(gen)
@@ -20,7 +21,9 @@ class Scheduler:
             except StopIteration:
                 pass
 
+
 sched = Scheduler()          # Background scheduler object
+
 
 def countdown(n):
     while n > 0:
@@ -36,6 +39,7 @@ def countup(stop):
         time.sleep(1)
         yield
         x += 1
+
 
 sched.new_task(countdown(5))
 sched.new_task(countup(5))
