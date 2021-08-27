@@ -47,7 +47,7 @@ class Scheduler:
                         timeout = 0
                 else:
                     timeout = None    # Wait forever
-                # Wait for I/O
+                # Wait for I/O (and sleep)
                 can_read, can_write, _ = select(self._read_waiting,
                                                 self._write_waiting, [], timeout)
 
