@@ -22,7 +22,7 @@ Each file is an executable.
 In order of programming model progressing to final example which combines a callback based Scheduler and coroutines which in turn enables the lib to be used with either callback or coroutine I/O solutions.
 
 ```yaml
-Threads: threads_expl.py, add producer/consumer to threads: producer.py
+Threads: threads_expl.py, add producer/consumer to threads producer.py
 
 Scheduler: recursive callbacks in func - main.py
 
