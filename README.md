@@ -21,10 +21,10 @@ Each file is an executable.
 
 In order of programming model progressing to final example which combines a callback based Scheduler and coroutines which in turn enables the lib to be used with either callback or coroutine I/O solutions.
 
-1. Threads: threads_expl.py, add producer/consumer to threads: producer.py
-2. Scheduler: recursive callbacks in func - main.py
-3. Yield and wrapped yield: yield_it.py
-4. Queue and Result: async_producer.py and a_pro_clean.py
-5. __await__: async_await_producer.py
-6. Combine callback Scheduler and Task wrapped coroutines: async_cb_coro.py
-7. Add I/O tcp_server: async_io.py
+1. **Threads:** threads_expl.py, add producer/consumer to threads: producer.py
+2. **Scheduler:** recursive callbacks in func - main.py
+3. **Yield and wrapped yield:** yield_it.py
+4. **Queue and Result:** async_producer.py and a_pro_clean.py
+5. **__await__:** async_await_producer.py
+6. **Combine callback Scheduler and Task wrapped coroutines:** async_cb_coro.py
+7. **Add I/O tcp_server:** async_io.py
