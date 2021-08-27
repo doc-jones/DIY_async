@@ -11,7 +11,8 @@ import heapq
 # Callback based scheduler (from earlier)
 class Scheduler:
     def __init__(self):
-        self.ready = deque()     # Functions ready to execute
+        self.ready = deque()  # Functions ready to execute
+        self.current = None
         self.sleeping = []       # Sleeping functions
         self.sequence = 0
 
