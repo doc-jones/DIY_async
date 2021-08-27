@@ -65,8 +65,6 @@ class Scheduler:
                     else:
                         break
 
-                self.ready.append(func)
-
             while self.ready:
                 func = self.ready.popleft()
                 func()
@@ -115,16 +113,20 @@ class Task:
         except StopIteration:
             pass
 
+
 class Awaitable:
     def __await__(self):
         yield
 
+
 def switch():
     return Awaitable()
+
 
 sched = Scheduler()    # Background scheduler object
 
 # ----------------
+
 
 class AsyncQueue:
     def __init__(self):
@@ -153,6 +155,7 @@ async def producer(q, count):
     print('Producer done')
     await q.put(None)   # "Sentinel" to shut down
 
+
 async def consumer(q):
     while True:
         item = await q.get()
@@ -171,6 +174,7 @@ def countdown(n):
         print('Down', n)
         # time.sleep(4)    # Blocking call (nothing else can run)
         sched.call_later(4, lambda: countdown(n-1))
+
 
 def countup(stop):
     def _run(x):
