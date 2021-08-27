@@ -1,4 +1,4 @@
-# DIY_async
+# DIY Async I/O
 
 Creating low-level foundations and abstractions for asynchronous programming in Python (i.e., implementing concurrency without using threads).
 
