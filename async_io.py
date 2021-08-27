@@ -183,4 +183,27 @@ def countup(stop):
 
 sched.call_soon(lambda: countdown(5))
 sched.call_soon(lambda: countup(20))
+
+from socket import *
+
+
+async def tcp_server(addr):
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.bind(addr)
+    sock.listen(1)
+    while True:
+        client, addr = await sched.accept(sock)
+        sched.new_task(echo_handler(client))
+
+
+async def echo_handler(sock):
+    while True:
+        data = await sched.recv(sock, 10000)
+        if not data:
+            break
+        await sched.send(sock, b'Got:' + data)
+    print('Connection closed')
+    sock.close()
+
+sched.new_task(tcp_server(('', 3000)))
 sched.run()
