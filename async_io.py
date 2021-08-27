@@ -51,6 +51,20 @@ class Scheduler:
                 can_read, can_write, _ = select(self._read_waiting,
                                                 self._write_waiting, [], timeout)
 
+                for file_descriptor in can_read:
+                    self.ready.append(self._read_waiting.pop(file_descriptor))
+
+                for file_descriptor in can_write:
+                    self.ready.append(self._write_waiting.pop(file_descriptor))
+
+                # Check for sleeping tasks
+                now = time.time()
+                while self.sleeping:
+                    if now > self.sleeping[0][0]:
+                        self.ready.append(heapq.heappop(self.sleeping[2]))
+                    else:
+                        break
+
                 self.ready.append(func)
 
             while self.ready:
@@ -65,6 +79,25 @@ class Scheduler:
         self.call_later(delay, self.current)
         self.current = None
         await switch()   # Switch to a new task
+
+    async def recv(self, sock, maxbytes):
+        self.read_wait(sock, self.current)
+        self.current = None
+        await switch()
+        return sock.recv(maxbytes)
+
+    async def send(self, sock, data):
+        self.write_wait(sock, self.current)
+        self.current = None
+        await switch()
+        return sock.send(data)
+
+    async def accept(self, sock):
+        self.read_wait(sock, self.current)
+        self.current = None
+        await switch()
+        return sock.accept()
+
 
 # Class that wraps a coroutine--making it look like a callback
 class Task:
